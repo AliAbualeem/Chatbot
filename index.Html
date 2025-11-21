@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>شات بوت OpenRouter</title>
+  <style>
+    body {
+      background-color: #f5f7fa;
+      font-family: "Cairo", sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #chat-container {
+      width: 95%;
+      max-width: 600px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 80vh;
+    }
+
+    #chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #f9fafb;
+    }
+
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 10px;
+      max-width: 80%;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background-color: #0078ff;
+      color: white;
+      align-self: flex-start;
+    }
+
+    .bot {
+      background-color: #e6e6e6;
+      color: #333;
+      align-self: flex-end;
+    }
+
+    #input-area {
+      display: flex;
+      padding: 10px;
+      background-color: #f0f2f5;
+      border-top: 1px solid #ddd;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      resize: none;
+      outline: none;
+    }
+
+    #send-btn {
+      margin-right: 10px;
+      padding: 10px 15px;
+      background-color: #0078ff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #send-btn:hover {
+      background-color: #005ecc;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="chat-container">
+    <div id="chat-box"></div>
+
+    <div id="input-area">
+      <textarea id="user-input" placeholder="اكتب رسالتك هنا..." rows="1"></textarea>
+      <button id="send-btn">إرسال</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      addMessage("user", message);
+      userInput.value = "";
+
+      try {
+        const response = await fetch("http://localhost:3000/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: message }]
+          }),
+        });
+
+        const data = await response.json();
+        let reply = data?.choices?.[0]?.message?.content || "حدث خطأ في الرد.";
+        addMessage("bot", reply);
+      } catch (error) {
+        console.error(error);
+        addMessage("bot", "حدث خطأ في الاتصال أو في الاستجابة.");
+      }
+    }
+
+    function addMessage(role, text) {
+      const messageDiv = document.createElement("div");
+      messageDiv.classList.add("message", role);
+      messageDiv.textContent = text;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keypress", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+
+</body>
+</html>
